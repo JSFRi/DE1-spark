@@ -1,2 +1,3 @@
 # DE1-spark
-Materials of Apache Spark in course Data Engineering I
+
+This repository is for the supplymental materials related with Spark lectures in the course Data Engineering 1, Department of Information Technology, Uppsala University.
