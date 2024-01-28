@@ -1,0 +1,167 @@
+########################################################################################################################
+##### Spark deploy instructions #####
+
+Your Spark applications will run in the cluster, but the 'driver' application will run on your machine.
+Recommend 2GB+ RAM and 1 CPU cores for your driver VM.
+
+A Spark/HDFS cluster has been deployed for you. To use it, first you will configure ports and security.
+
+# 0. The web GUIs for Spark and HDFS are not open publicly, so you will need to configure some port forwarding so that you can access them via the TCP ports.
+
+To do this, create or modify the file ~/.ssh/config on your local (laptop) computer by adding a section like the one shown below:
+(This is unix-like systems and (Windows Subsystem for Linux) WSL, you may have to modify the instructions if you are using some other system).
+
+Replace 130.238.x.y and ~/.ssh/id_rsa with your floating IP and key path appropriately:
+
+Host 130.238.x.y
+KexAlgorithms +diffie-hellman-group1-sha1
+  User ubuntu
+  # modify this to match the name of your key
+  IdentityFile ~/.ssh/id_rsa
+  # Spark master web GUI
+  LocalForward 8080 192.168.2.119:8080
+  # HDFS namenode web gui
+  LocalForward 9870 192.168.2.119:9870
+  # python notebook
+  LocalForward 8888 localhost:8888
+  # spark applications
+  LocalForward 4040 localhost:4040
+  LocalForward 4041 localhost:4041
+  LocalForward 4042 localhost:4042
+  LocalForward 4043 localhost:4043
+  LocalForward 4044 localhost:4044
+  LocalForward 4045 localhost:4045
+  LocalForward 4046 localhost:4046
+  LocalForward 4047 localhost:4047
+  LocalForward 4048 localhost:4048
+  LocalForward 4049 localhost:4049
+  LocalForward 4050 localhost:4050
+  LocalForward 4051 localhost:4051
+  LocalForward 4052 localhost:4052
+  LocalForward 4053 localhost:4053
+  LocalForward 4054 localhost:4054
+  LocalForward 4055 localhost:4055
+  LocalForward 4056 localhost:4056
+  LocalForward 4057 localhost:4057
+  LocalForward 4058 localhost:4058
+  LocalForward 4059 localhost:4059
+  LocalForward 4060 localhost:4060
+
+Notes:
+- The 'IdentityFile' line follows the same syntax whether you are using a .pem key file, or an OpenSSH key file (without an extension), as shown above. For a .pem, write something like this:
+      IdentityFile ~/.ssh/my_key.pem
+- If you are using Windows Subsystem for Linux (WSL), the path to the identity file needs to be relative to the root of the filesystem for Ubuntu.
+- You may get a warning about an "UNPROTECTED PRIVATE KEY FILE!" - to fix this, change the permissions on your key file to 400.
+chmod 400 ~/.ssh/mykey.pem
+- If you are using Windows Subsystem for Linux (WSL), you may need to copy your SSH key into the Ubuntu filesystem to be able to modify the permissions.
+
+
+With these settings, you can connect to your host like this (without any additional parameters):
+
+ssh 130.238.x.y
+
+And when you access localhost:8080 in your browser, it will be forwarded to 192.168.2.250:8080 - the Web GUI of the Spark master.
+
+0. Check the Spark and HDFS cluster is operating by opening these links in your browser
+        http://localhost:8080
+        http://localhost:9870
+
+# All needed ports have been added in the default security group, but in case of special uses, you should create new security group with new rules and assign to your instance. Do NOT modify the default security group.
+
+For HDFS, try Utilities > Browse to see the files on the cluster.
+
+
+#####################
+### These instructions are for Ubuntu 20.04
+
+
+# update apt repo metadata
+sudo apt update
+
+# install java
+sudo apt-get install -y openjdk-17-jdk
+
+# manually define a hostname for all the hosts on the de1 project. this will ensure connections of spark between difference instances:
+# NOTE! if you have added entries to /etc/hosts yourself, you need to remove those.
+for i in {1..255}; do echo "192.168.1.$i host-192-168-1-$i-de1"| sudo tee -a /etc/hosts; done
+for i in {1..255}; do echo "192.168.2.$i host-192-168-2-$i-de1"| sudo tee -a /etc/hosts; done
+
+# set the hostname according to the scheme above:
+sudo hostname host-$(hostname -I | awk '{$1=$1};1' | sed 's/\./-/'g)-de1 ; hostname
+
+# change the /etc/hostname file to the host name you get from last command (in the form of host-192-168-x-xxx-de1)
+
+
+########################################################################################################################
+##### Install Python Packages #####
+
+# Env variable so the workers know which Python to use...
+echo "export PYSPARK_PYTHON=python3" >> ~/.bashrc
+source ~/.bashrc
+
+# install git
+sudo apt-get install -y git
+
+# install python dependencies, and start jupyterlab
+
+# install the python package manager 'pip' -- it is recommended to do this directly 
+sudo apt-get install -y python3-pip
+
+# check the version:
+#python3 -m pip --version
+
+# install pyspark (version must be matched as the Spark cluster), and some other useful deps
+python3 -m pip install pyspark==3.5.0 --user
+python3 -m pip install pandas --user
+python3 -m pip install matplotlib --user
+
+# clone the examples from the lectures, so you have a copy to experiment with
+git clone https://github.com/JSFRi/DE1-spark.git
+
+# install jupyterlab
+python3 -m pip install jupyterlab --user
+
+# start!
+python3 -m jupyterlab
+
+# ...follow the instructions you see -- copy the 'localhost' link into your browser.
+
+# Now you can run the examples from the lectures in your own notebook.
+# Using the Jupyter Notebook, navigate into the directory you just cloned from GitHub.
+# Start with DE1-2024/Lecture1_Example0_with_spark.ipynb
+# Ensure the host is set correctly for the Spark master, and HDFS namenode, to:
+#  192.168.2.250
+
+# When you start your application, you'll see it running in the Spark master web GUI (link at the top).
+# If you hover over the link to your application, you'll see the port number for the Web GUI for your application.
+# It will be 4040,4041,...
+# You can open the GUI in your web browser like this (e.g.):
+#   http://localhost:4040
+
+########################################################################################################################
+##### Creating your own notebook that deploys spark jobs to the cluster #####
+
+# When working on your own notebooks, save them in your own repository (for example which you created in A1, do a git clone) and
+# make sure to commit and push changes often (for backup purposes).
+
+# You need to share the Spark cluster with the other students:
+
+# 1. Start your application with dynamic allocation enabled, a timeout of no more than 30 seconds, and a cap on CPU cores:
+spark_session = SparkSession\
+        .builder\
+        .master("spark://192.168.2.250:7077") \
+        .appName("your_application_name")\
+        .config("spark.dynamicAllocation.enabled", True)\
+        .config("spark.dynamicAllocation.shuffleTracking.enabled",True)\
+        .config("spark.shuffle.service.enabled", False)\
+        .config("spark.dynamicAllocation.executorIdleTimeout","30s")\
+        .config("spark.executor.cores",2)\
+        .config("spark.driver.port",9998)\
+        .config("spark.blockManager.port",10005)\
+        .getOrCreate()
+
+# 2. Put your name in the name of your application.
+# 3. Kill your application when your have finished with it.
+# 4. Don't interfere with any of the virtual machines in the cluster.
+# 5. Run one app at a time.
+# 6. When the lab is not running, you can use more resources, but keep an eye on other people using the system.

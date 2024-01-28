@@ -1,0 +1,222 @@
+########################################################################################################################
+##### Spark deploy instructions on UPPMAX #####
+
+# These are instructions for deploying Apache Spark.
+# They include a hacks relevant for the SNIC cloud, which we wouldn't use for a production system.
+# For the lab, a spark cluster has already been deployed -- this will be an experiment!
+
+# 0. Create a virtual machine (or use an existing one), this instance will be used for both the Spark master and a worker.
+#    Choose a suitable flavor.
+#    Use Ubuntu 20.04 as the source image.
+# 0. Add a floating IP to the VM
+# 0. Configure the ~/.ssh/config on your local laptop/desktop/lab computer like this.
+#    This is for the university lab machines or other unix-like systems and (Windows Subsystem for Linux) WSL, you may have
+#    to modify the instructions if you are using some other system):
+
+# replace 130.238.x.y and ~/.ssh/id_rsa with your floating IP and key path appropriately.
+
+Host 130.238.x.y
+KexAlgorithms +diffie-hellman-group1-sha1
+  User ubuntu
+  # modify this to match the name of your key
+  IdentityFile ~/.ssh/id_rsa
+  # Spark master web GUI
+  LocalForward 8080 192.168.2.250:8080
+  # HDFS namenode web gui
+  LocalForward 9870 192.168.2.250:9870
+  # python notebook
+  LocalForward 8888 localhost:8888
+  # spark applications
+  LocalForward 4040 localhost:4040
+  LocalForward 4041 localhost:4041
+  LocalForward 4042 localhost:4042
+  LocalForward 4043 localhost:4043
+  LocalForward 4044 localhost:4044
+  LocalForward 4045 localhost:4045
+  LocalForward 4046 localhost:4046
+  LocalForward 4047 localhost:4047
+  LocalForward 4048 localhost:4048
+  LocalForward 4049 localhost:4049
+  LocalForward 4050 localhost:4050
+  LocalForward 4051 localhost:4051
+  LocalForward 4052 localhost:4052
+  LocalForward 4053 localhost:4053
+  LocalForward 4054 localhost:4054
+  LocalForward 4055 localhost:4055
+  LocalForward 4056 localhost:4056
+  LocalForward 4057 localhost:4057
+  LocalForward 4058 localhost:4058
+  LocalForward 4059 localhost:4059
+  LocalForward 4060 localhost:4060
+
+# This will open ssh-tunnels (for the given ports) between your local computer and the VM. This will enable you to access e.g a jupyter
+# notebook via your browser by localhost:8888. Note: the first port listed is the port on your local machine, localhost:XXXX refers to the remote machine.
+
+# Note: having setup the config file, when you connect with SSH do it like this (without any additional parameters).
+# ssh 130.238.x.y
+
+## For this example, we'll install Spark worker and master on the same virual machine. Normally we'd put the master on its own machine.
+
+# update apt repo metadata
+sudo apt update
+
+# install java (version up to you, but must be >= 8)
+sudo apt-get install -y openjdk-17-jdk
+
+
+# manually define a hostname for all the hosts on the de1 project. this will ensure connections of spark between difference instances:
+# NOTE! if you have added entries to /etc/hosts yourself, you need to remove those.
+for i in {1..255}; do echo "192.168.1.$i host-192-168-1-$i-de1"| sudo tee -a /etc/hosts; done
+for i in {1..255}; do echo "192.168.2.$i host-192-168-2-$i-de1"| sudo tee -a /etc/hosts; done
+
+# set the hostname according to the scheme above:
+sudo hostname host-$(hostname -I | awk '{$1=$1};1' | sed 's/\./-/'g)-de1 ; hostname
+
+# change the /etc/hostname file to the host name you get from last command (in the form of host-192-168-x-xxx-de1)
+
+
+########################################################################################################################
+##### Install HDFS (e.g. to connect to cluster) #####
+
+# This section describes how to install Hadoop to allow you to add your own files to the Hadoop Cluster.
+
+# We assume we've already installed Java above (OpenJDK).
+# HDFS needs to know where Java is... we use an environment variable for this.
+# Lets put it in the .bashrc file so we don't need to set it each time
+echo "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64/jre" >> ~/.bashrc
+
+# Run the file so its available now.
+source ~/.bashrc
+
+# Download hadoop: (You can choose the version of hadoop you prefer, but make sure the spark version is corresponded to hadoop's version)
+cd ~
+wget http://apache.mirrors.tds.net/hadoop/common/hadoop-3.3.0/hadoop-3.3.0.tar.gz
+
+tar -xvf hadoop-3.3.0.tar.gz
+
+# Set up the hadoop environment according to youe cluster mode
+https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/SingleCluster.html
+https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/ClusterSetup.html
+
+# Now we can use HDFS to copy files in and out of the storage cluster for use with Spark:
+# The namenode host can be set in the config file core-site.xml, or as here, directly on the command line. (use your ip address instead)
+~/hadoop-3.3.0/bin/hdfs dfs -Dfs.defaultFS="hdfs://192.168.2.250:9000" -ls /
+
+# Notes
+# 1. Please don't attempt to connect your namenodes/datanodes to the existing cluster!
+# 2. This is a shared resource, use it sensibly. Please keep an eye on disk space.
+# 3. You can always use the local storage system for spark if you don't need data accessment from other devices.
+
+
+########################################################################################################################
+##### Spark Master/Worker #####
+
+cd ~
+
+# download Spark (find the correct version by yourself, make sure the versions of hadoop, spark, and pyspark are consistent)
+# (for Hadoop 3.3.0 (3.2+))
+wget http://apache.mirrors.tds.net/spark/spark-3.2.1/spark-3.2.1-bin-hadoop3.2.tgz
+
+tar -zxvf spark-3.2.1-bin-hadoop3.2.tgz
+
+# Tell Spark that we're using Python 3 -- we need to use the same version of Python everywhere.
+echo "export SPARK_HOME=~/spark-3.2.1-bin-hadoop3.2" >> ~/.bashrc
+source ~/.bashrc
+
+
+cd ~/spark-3.2.1-bin-hadoop3.2/
+
+
+# lets have a look at what's in the spark directories.
+ls -l
+
+# start the master on the current machine:
+~/spark-3.2.1-bin-hadoop3.2/sbin/start-master.sh
+
+
+# start the worker on the current machine (and tell it where the master is listening -- the IP address of our master node from above):
+~/spark-3.2.1-bin-hadoop3.2/sbin/start-worker.sh spark://192.168.X.Y:7077
+
+
+# is it running?
+jps
+
+# After this, you will need to setup security groups for the firewall configuration. Have a look how its done for the shared cluster.
+
+########################################################################################################################
+##### Install the Python Notebook -- RESUME HERE FOR THE LAB  #####
+
+########################################################################################################################
+##### Install the Python Notebook #####
+
+# Env variable so the workers know which Python to use...
+echo "export PYSPARK_PYTHON=python3" >> ~/.bashrc
+source ~/.bashrc
+
+# install git
+sudo apt-get install -y git
+
+# install python dependencies, start notebook
+
+# install the python package manager 'pip' -- it is recommended to do this directly 
+sudo apt-get install -y python3-pip
+
+# check the version:
+#python3 -m pip --version
+
+# install pyspark (the matching version as the cluster), and some other useful deps (if running on user account add --user)
+python3 -m pip install pyspark==3.2.1 (--user)
+python3 -m pip install pandas (--user)
+python3 -m pip install matplotlib (--user)
+
+# clone the examples from the lectures, so we have a copy to experiment with
+git clone https://github.com/JSFRi/DE1-spark.git
+
+# install jupyterlab
+python3 -m pip install jupyterlab (--user)
+
+# start the notebook!
+jupyter lab
+
+# ...follow the instructions you see -- copy the 'localhost' link into your browser.
+
+# Now you can run the examples from the lectures in your own notebook.
+# Using the Jupyter Notebook, navigate into the directory you just cloned from GitHub.
+# Start with a demo notebook
+# Ensure the host is set correctly for the Spark master, and namenode, to:
+#  192.168.2.119
+
+# When you start your application, you'll see it running in the Spark master web GUI (link at the top).
+# If you hover over the link to your application, you'll see the port number for the Web GUI for your application.
+# It will be 4040,4041,...
+# You can open the GUI in your web browser like this (e.g.):
+#   http://localhost:4040
+
+########################################################################################################################
+##### Creating your own notebook that deploys spark jobs to the cluster #####
+
+# When working on your own notebooks, save them in your own repository (for example which you created in A1, do a git clone) and
+# make sure to commit and push changes often (for backup purposes).
+
+# You need to share the Spark cluster with the other students:
+
+# 1. Start your application with dynamic allocation enabled, a timeout of no more than 30 seconds, and a cap on CPU cores: (fixed driver/blockManager port for security group)
+
+spark_session = SparkSession\
+        .builder\
+        .master("spark://192.168.2.250:7077") \
+        .appName("your_application_name")\
+        .config("spark.dynamicAllocation.enabled", True)\
+        .config("spark.dynamicAllocation.shuffleTracking.enabled",True)\
+        .config("spark.shuffle.service.enabled", False)\
+        .config("spark.dynamicAllocation.executorIdleTimeout","300s")\
+        .config("spark.executor.cores",2)\
+        .config("spark.driver.port",9999)\
+        .config("spark.blockManager.port",10005)\
+        .getOrCreate()
+
+# 2. Put your name in the name of your application.
+# 3. Kill your application when your have finished with it.
+# 4. Don't interfere with any of the virtual machines in the cluster.
+# 5. Run one app at a time.
+# 6. When the lab is not running, you can use more resources, but keep an eye on other people using the system.
