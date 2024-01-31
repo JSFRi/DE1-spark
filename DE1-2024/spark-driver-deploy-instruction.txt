@@ -20,7 +20,7 @@ KexAlgorithms +diffie-hellman-group1-sha1
   IdentityFile ~/.ssh/id_rsa
   # Spark master web GUI
   LocalForward 8080 192.168.2.119:8080
-  # HDFS namenode web gui
+  # HDFS namenode web GUI
   LocalForward 9870 192.168.2.119:9870
   # python notebook
   LocalForward 8888 localhost:8888
@@ -156,7 +156,7 @@ spark_session = SparkSession\
         .config("spark.shuffle.service.enabled", False)\
         .config("spark.dynamicAllocation.executorIdleTimeout","30s")\
         .config("spark.executor.cores",2)\
-        .config("spark.driver.port",9998)\
+        .config("spark.driver.port",9999)\
         .config("spark.blockManager.port",10005)\
         .getOrCreate()
 

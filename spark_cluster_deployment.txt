@@ -90,9 +90,9 @@ source ~/.bashrc
 
 # Download hadoop: (You can choose the version of hadoop you prefer, but make sure the spark version is corresponded to hadoop's version)
 cd ~
-wget http://apache.mirrors.tds.net/hadoop/common/hadoop-3.3.0/hadoop-3.3.0.tar.gz
+wget https://downloads.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz
 
-tar -xvf hadoop-3.3.0.tar.gz
+tar -xvf hadoop-3.3.6.tar.gz
 
 # Set up the hadoop environment according to youe cluster mode
 https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/SingleCluster.html
@@ -100,7 +100,7 @@ https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/ClusterS
 
 # Now we can use HDFS to copy files in and out of the storage cluster for use with Spark:
 # The namenode host can be set in the config file core-site.xml, or as here, directly on the command line. (use your ip address instead)
-~/hadoop-3.3.0/bin/hdfs dfs -Dfs.defaultFS="hdfs://192.168.2.250:9000" -ls /
+~/hadoop-3.3.6/bin/hdfs dfs -Dfs.defaultFS="hdfs://192.168.2.250:9000" -ls /
 
 # Notes
 # 1. Please don't attempt to connect your namenodes/datanodes to the existing cluster!
@@ -114,28 +114,28 @@ https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/ClusterS
 cd ~
 
 # download Spark (find the correct version by yourself, make sure the versions of hadoop, spark, and pyspark are consistent)
-# (for Hadoop 3.3.0 (3.2+))
-wget http://apache.mirrors.tds.net/spark/spark-3.2.1/spark-3.2.1-bin-hadoop3.2.tgz
+# (for Hadoop 3.3.6 (3+))
+wget https://downloads.apache.org/spark/spark-3.5.0/spark-3.5.0-bin-hadoop3.tgz
 
-tar -zxvf spark-3.2.1-bin-hadoop3.2.tgz
+tar -zxvf spark-3.5.0-bin-hadoop3.tgz
 
 # Tell Spark that we're using Python 3 -- we need to use the same version of Python everywhere.
-echo "export SPARK_HOME=~/spark-3.2.1-bin-hadoop3.2" >> ~/.bashrc
+echo "export SPARK_HOME=~/spark-3.5.0-bin-hadoop3/" >> ~/.bashrc
 source ~/.bashrc
 
 
-cd ~/spark-3.2.1-bin-hadoop3.2/
+cd ~/spark-3.5.0-bin-hadoop3/
 
 
 # lets have a look at what's in the spark directories.
 ls -l
 
 # start the master on the current machine:
-~/spark-3.2.1-bin-hadoop3.2/sbin/start-master.sh
+~/spark-3.5.0-bin-hadoop3/sbin/start-master.sh
 
 
 # start the worker on the current machine (and tell it where the master is listening -- the IP address of our master node from above):
-~/spark-3.2.1-bin-hadoop3.2/sbin/start-worker.sh spark://192.168.X.Y:7077
+~/spark-3.5.0-bin-hadoop3/sbin/start-worker.sh spark://192.168.X.Y:7077
 
 
 # is it running?
@@ -165,7 +165,7 @@ sudo apt-get install -y python3-pip
 #python3 -m pip --version
 
 # install pyspark (the matching version as the cluster), and some other useful deps (if running on user account add --user)
-python3 -m pip install pyspark==3.2.1 (--user)
+python3 -m pip install pyspark==3.5.0 (--user)
 python3 -m pip install pandas (--user)
 python3 -m pip install matplotlib (--user)
 
