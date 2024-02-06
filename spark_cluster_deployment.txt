@@ -83,7 +83,7 @@ sudo hostname host-$(hostname -I | awk '{$1=$1};1' | sed 's/\./-/'g)-de1 ; hostn
 # We assume we've already installed Java above (OpenJDK).
 # HDFS needs to know where Java is... we use an environment variable for this.
 # Lets put it in the .bashrc file so we don't need to set it each time
-echo "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64/jre" >> ~/.bashrc
+echo "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> ~/.bashrc
 
 # Run the file so its available now.
 source ~/.bashrc
@@ -120,7 +120,7 @@ wget https://downloads.apache.org/spark/spark-3.5.0/spark-3.5.0-bin-hadoop3.tgz
 tar -zxvf spark-3.5.0-bin-hadoop3.tgz
 
 # Tell Spark that we're using Python 3 -- we need to use the same version of Python everywhere.
-echo "export SPARK_HOME=~/spark-3.5.0-bin-hadoop3/" >> ~/.bashrc
+echo "export SPARK_HOME=~/spark-3.5.0-bin-hadoop3" >> ~/.bashrc
 source ~/.bashrc
 
 
@@ -184,7 +184,7 @@ jupyter lab
 # Using the Jupyter Notebook, navigate into the directory you just cloned from GitHub.
 # Start with a demo notebook
 # Ensure the host is set correctly for the Spark master, and namenode, to:
-#  192.168.2.119
+#  192.168.2.250
 
 # When you start your application, you'll see it running in the Spark master web GUI (link at the top).
 # If you hover over the link to your application, you'll see the port number for the Web GUI for your application.

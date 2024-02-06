@@ -108,7 +108,7 @@ sudo apt-get install -y git
 sudo apt-get install -y python3-pip
 
 # check the version:
-#python3 -m pip --version
+python3 -m pip --version
 
 # install pyspark (version must be matched as the Spark cluster), and some other useful deps
 python3 -m pip install pyspark==3.5.0 --user
