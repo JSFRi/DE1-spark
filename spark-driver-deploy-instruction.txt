@@ -3,6 +3,7 @@
 
 Your Spark applications will run in the cluster, but the 'driver' application will run on your machine.
 Recommend 2GB+ RAM and 1 CPU cores for your driver VM.
+N.B. use image Ubuntu 20.04
 
 A Spark/HDFS cluster has been deployed for you. To use it, first you will configure ports and security.
 
