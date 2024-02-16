@@ -123,7 +123,7 @@ git clone https://github.com/JSFRi/DE1-spark.git
 python3 -m pip install jupyterlab --user
 
 # start!
-jupyter lab --ip=<your_local_ip>
+jupyter lab --ip=<vm_local_ip>
 
 # ...follow the instructions you see -- copy the 'localhost' link into your browser.
 
