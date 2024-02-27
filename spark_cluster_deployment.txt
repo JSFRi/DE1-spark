@@ -61,18 +61,16 @@ KexAlgorithms +diffie-hellman-group1-sha1
 sudo apt update
 
 # install java (version up to you, but must be >= 8)
-sudo apt-get install -y openjdk-17-jdk
+sudo apt-get install -y openjdk-8-jdk
 
 
-# manually define a hostname for all the hosts on the de1 project. this will ensure connections of spark between difference instances:
-# NOTE! if you have added entries to /etc/hosts yourself, you need to remove those.
-for i in {1..255}; do echo "192.168.1.$i host-192-168-1-$i-de1"| sudo tee -a /etc/hosts; done
-for i in {1..255}; do echo "192.168.2.$i host-192-168-2-$i-de1"| sudo tee -a /etc/hosts; done
+# manually define a hostname for all the hosts in the project. this ensures connections of spark between master, workers and drivers:
+# In /etc/hosts, add the ip-hostname pairs for master, workers, and drivers
 
-# set the hostname according to the scheme above:
-sudo hostname host-$(hostname -I | awk '{$1=$1};1' | sed 's/\./-/'g)-de1 ; hostname
+master_private_ip hostname_of_master
+worker1_private_ip hostname_of_worker1
+...
 
-# change the /etc/hostname file to the host name you get from last command (in the form of host-192-168-x-xxx-de1)
 
 
 ########################################################################################################################
@@ -83,7 +81,7 @@ sudo hostname host-$(hostname -I | awk '{$1=$1};1' | sed 's/\./-/'g)-de1 ; hostn
 # We assume we've already installed Java above (OpenJDK).
 # HDFS needs to know where Java is... we use an environment variable for this.
 # Lets put it in the .bashrc file so we don't need to set it each time
-echo "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> ~/.bashrc
+echo "export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre" >> ~/.bashrc
 
 # Run the file so its available now.
 source ~/.bashrc
@@ -100,7 +98,7 @@ https://hadoop.apache.org/docs/stable/hadoop-project-dist/hadoop-common/ClusterS
 
 # Now we can use HDFS to copy files in and out of the storage cluster for use with Spark:
 # The namenode host can be set in the config file core-site.xml, or as here, directly on the command line. (use your ip address instead)
-~/hadoop-3.3.6/bin/hdfs dfs -Dfs.defaultFS="hdfs://192.168.2.250:9000" -ls /
+~/hadoop-3.3.6/bin/hdfs dfs -Dfs.defaultFS="hdfs://192.168.X.Y:9000" -ls /
 
 # Notes
 # 1. Please don't attempt to connect your namenodes/datanodes to the existing cluster!
@@ -144,7 +142,7 @@ jps
 # After this, you will need to setup security groups for the firewall configuration. Have a look how its done for the shared cluster.
 
 ########################################################################################################################
-##### Install the Python Notebook -- RESUME HERE FOR THE LAB  #####
+##### Install the Python Notebook -- On the driver machine  #####
 
 ########################################################################################################################
 ##### Install the Python Notebook #####
@@ -184,7 +182,7 @@ jupyter lab
 # Using the Jupyter Notebook, navigate into the directory you just cloned from GitHub.
 # Start with a demo notebook
 # Ensure the host is set correctly for the Spark master, and namenode, to:
-#  192.168.2.250
+#  192.168.X.Y
 
 # When you start your application, you'll see it running in the Spark master web GUI (link at the top).
 # If you hover over the link to your application, you'll see the port number for the Web GUI for your application.
@@ -204,7 +202,7 @@ jupyter lab
 
 spark_session = SparkSession\
         .builder\
-        .master("spark://192.168.2.250:7077") \
+        .master("spark://192.168.X.Y:7077") \
         .appName("your_application_name")\
         .config("spark.dynamicAllocation.enabled", True)\
         .config("spark.dynamicAllocation.shuffleTracking.enabled",True)\
